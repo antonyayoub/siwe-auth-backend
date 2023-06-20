@@ -1,10 +1,24 @@
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class User {
   @PrimaryColumn({ unique: true })
   userName: string;
 
-  @Column()
-  ETHAddress: string;
+  @Column({
+    unique: true,
+  })
+  ethAddress: string;
+
+  @CreateDateColumn()
+  createdAt: string;
+
+  @UpdateDateColumn()
+  updatedAt: string;
 }

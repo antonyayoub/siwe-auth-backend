@@ -1,4 +1,4 @@
 export class CreateUserDto {
   userName: string;
-  ETHAddress: string;
+  ethAddress: string;
 }

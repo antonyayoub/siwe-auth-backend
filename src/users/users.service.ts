@@ -14,7 +14,7 @@ export class UsersService {
   async create(createUserDto: CreateUserDto): Promise<User> {
     const newUser = new User();
     newUser.userName = createUserDto.userName;
-    newUser.ETHAddress = createUserDto.ETHAddress;
+    newUser.ethAddress = createUserDto.ethAddress;
 
     // Check if username already exists in the database
     const existingUser = await this.usersRepository.findOneBy({
@@ -34,6 +34,10 @@ export class UsersService {
 
   findOne(userName: string): Promise<User> {
     return this.usersRepository.findOneBy({ userName: userName });
+  }
+
+  findOneByEthAddress(ethAddress: string): Promise<User> {
+    return this.usersRepository.findOneBy({ ethAddress: ethAddress });
   }
 
   async remove(userName: string): Promise<void> {
