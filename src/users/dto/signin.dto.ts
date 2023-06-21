@@ -6,7 +6,6 @@ export class SigninDto {
   ethAddress: string;
 
   @IsNotEmpty()
-  @IsString()
   message: string;
 
   @IsNotEmpty()

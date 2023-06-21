@@ -10,7 +10,6 @@ export class SignupDto {
   ethAddress: string;
 
   @IsNotEmpty()
-  @IsString()
   message: string;
 
   @IsNotEmpty()

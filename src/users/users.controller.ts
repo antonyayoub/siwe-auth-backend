@@ -65,27 +65,20 @@ export class UsersController {
   async signin(@Body() signinDto: SigninDto) {
     const { ethAddress, message, signature, nonce } = signinDto;
 
-    try {
-      await this.siweService.verifyMessage(message, signature, nonce);
+    await this.siweService.verifyMessage(message, signature, nonce);
 
-      const user = await this.userService.findOneByEthAddress(ethAddress);
+    const user = await this.userService.findOneByEthAddress(ethAddress);
 
-      if (!user) {
-        throw new HttpException('user not found', HttpStatus.NOT_FOUND);
-      }
-
-      const accessToken = (await this.authService.generateToken(user))
-        .access_token;
-
-      return {
-        accessToken,
-      };
-    } catch (e) {
-      throw new HttpException(
-        'internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    if (!user) {
+      throw new HttpException('user not found', HttpStatus.NOT_FOUND);
     }
+
+    const accessToken = (await this.authService.generateToken(user))
+      .access_token;
+
+    return {
+      accessToken,
+    };
   }
   @Get('/profile/:ethAddress')
   async profile(
