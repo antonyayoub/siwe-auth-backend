@@ -1,18 +1,21 @@
 import {
+  Body,
   ConflictException,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
+  Param,
   Post,
   Req,
-  Res,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
-
-import { UsersService } from './users.service';
+import { Request } from 'express';
 import { ethers } from 'ethers';
-import { CreateUserDto } from './dto/create-user.dto';
-import { AuthService } from 'src/auth/auth.service';
 import { QueryFailedError } from 'typeorm';
+
+import { CreateUserDto } from './dto/create-user.dto';
+import { UsersService } from './users.service';
+import { AuthService } from 'src/auth/auth.service';
 import { SiweService } from 'src/siwe/siwe.service';
 
 @Controller('user')
@@ -24,27 +27,26 @@ export class UsersController {
   ) {}
 
   @Post('/signup')
-  async signup(@Req() req: Request, @Res() res: Response) {
-    if (
-      !req.body.userName ||
-      !req.body.ethAddress ||
-      !req.body.message ||
-      !req.body.signature ||
-      !req.body.nonce
-    ) {
-      return res.status(422).send('Missing required information');
+  async signup(
+    @Body('userName') userName: string,
+    @Body('ethAddress') ethAddress: string,
+    @Body('message') message: string,
+    @Body('signature') signature: string,
+    @Body('nonce') nonce: string,
+  ) {
+    if (!userName || !ethAddress || !message || !signature || !nonce) {
+      throw new HttpException(
+        'Missing required information',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
 
     try {
-      await this.siweService.verifyMessage(
-        req.body.message,
-        req.body.signature,
-        req.body.nonce,
-      );
+      await this.siweService.verifyMessage(message, signature, nonce);
 
       const newUserDto: CreateUserDto = {
-        userName: req.body.userName,
-        ethAddress: ethers.getAddress(req.body.ethAddress),
+        userName: userName,
+        ethAddress: ethers.getAddress(ethAddress),
       };
 
       const newUser = await this.userService.create(newUserDto);
@@ -52,85 +54,69 @@ export class UsersController {
       const accessToken = (await this.authService.generateToken(newUser))
         .access_token;
 
-      res.status(200).json({
+      return {
         accessToken,
-      });
+      };
     } catch (e) {
       if (e instanceof QueryFailedError) {
-        return res.status(500).json({
-          message: 'user already exist',
-        });
+        throw new HttpException('user already exist', HttpStatus.CONFLICT);
       }
       if (e instanceof ConflictException) {
-        return res.status(500).json({
-          message: 'username already exist',
-        });
+        throw new HttpException('username already exist', HttpStatus.CONFLICT);
       }
-      return res.status(500).json({
-        message: 'internal server error',
-      });
+      throw new HttpException(
+        'internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @Post('/signin')
-  async signin(@Req() req: Request, @Res() res: Response) {
-    if (
-      !req.body.ethAddress ||
-      !req.body.message ||
-      !req.body.signature ||
-      !req.body.nonce
-    ) {
-      return res.status(422).send('Missing required information');
+  async signin(
+    @Body('ethAddress') ethAddress: string,
+    @Body('message') message: string,
+    @Body('signature') signature: string,
+    @Body('nonce') nonce: string,
+  ) {
+    if (!ethAddress || !message || !signature || !nonce) {
+      throw new HttpException(
+        'Missing required information',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
 
     try {
-      await this.siweService.verifyMessage(
-        req.body.message,
-        req.body.signature,
-        req.body.nonce,
-      );
+      await this.siweService.verifyMessage(message, signature, nonce);
 
-      const user = await this.userService.findOneByEthAddress(
-        req.body.ethAddress,
-      );
+      const user = await this.userService.findOneByEthAddress(ethAddress);
 
       if (!user) {
-        return res.status(404).json({
-          message: 'user not found',
-        });
+        throw new HttpException('user not found', HttpStatus.NOT_FOUND);
       }
 
       const accessToken = (await this.authService.generateToken(user))
         .access_token;
 
-      res.status(200).json({
+      return {
         accessToken,
-      });
+      };
     } catch (e) {
-      return res.status(500).json({
-        message: 'internal server error',
-      });
+      throw new HttpException(
+        'internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
   @Get('/profile/:ethAddress')
-  async profile(@Req() req: Request, @Res() res: Response) {
+  async profile(@Req() req: Request, @Param('ethAddress') ethAddress: string) {
     if (!req.headers.authorization) {
-      return res.status(401).json({
-        message: 'unauthorized',
-      });
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
     const token = req.headers.authorization.split(' ')[1];
-    const user = await this.authService.validateUser(
-      req.params.ethAddress,
-      token,
-    );
+    const user = await this.authService.validateUser(ethAddress, token);
     if (!user) {
-      return res.status(401).json({
-        message: 'unauthorized',
-      });
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
-    return res.status(200).json({
-      user,
-    });
+    return { user };
   }
 }

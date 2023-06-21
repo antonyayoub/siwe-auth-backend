@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { User } from 'src/users/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -11,7 +12,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async validateUser(ethAddress: string, accessToken: string): Promise<any> {
+  async validateUser(ethAddress: string, accessToken: string): Promise<User> {
     const jwtSecret = this.configService.get<string>('JWT_SECRET');
     const payload = this.jwtService.verify(accessToken, {
       secret: jwtSecret,
@@ -26,9 +27,9 @@ export class AuthService {
     return null;
   }
 
-  async generateToken(user: any) {
+  async generateToken(user: User) {
     const jwtSecret = this.configService.get<string>('JWT_SECRET');
-    const payload = { username: user.username, ethAddress: user.ethAddress };
+    const payload = { username: user.userName, ethAddress: user.ethAddress };
     return {
       access_token: this.jwtService.sign(payload, {
         secret: jwtSecret,
