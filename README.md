@@ -17,7 +17,7 @@ Clone `.env.example` to `.env` and configure following environment variables if 
 ### Running the app
 
 ```bash
-# development
+# start app
 $ yarn start
 ```
 
