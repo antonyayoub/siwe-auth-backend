@@ -16,6 +16,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 import { AuthService } from 'src/auth/auth.service';
 import { SiweService } from 'src/siwe/siwe.service';
+import { SigninDto } from './dto/signin.dto';
+import { SignupDto } from './dto/signup.dto';
 
 @Controller('user')
 export class UsersController {
@@ -26,19 +28,8 @@ export class UsersController {
   ) {}
 
   @Post('/signup')
-  async signup(
-    @Body('userName') userName: string,
-    @Body('ethAddress') ethAddress: string,
-    @Body('message') message: string,
-    @Body('signature') signature: string,
-    @Body('nonce') nonce: string,
-  ) {
-    if (!userName || !ethAddress || !message || !signature || !nonce) {
-      throw new HttpException(
-        'Missing required information',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
+  async signup(@Body() signupDto: SignupDto) {
+    const { userName, ethAddress, message, signature, nonce } = signupDto;
 
     try {
       await this.siweService.verifyMessage(message, signature, nonce);
@@ -71,18 +62,8 @@ export class UsersController {
   }
 
   @Post('/signin')
-  async signin(
-    @Body('ethAddress') ethAddress: string,
-    @Body('message') message: string,
-    @Body('signature') signature: string,
-    @Body('nonce') nonce: string,
-  ) {
-    if (!ethAddress || !message || !signature || !nonce) {
-      throw new HttpException(
-        'Missing required information',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
+  async signin(@Body() signinDto: SigninDto) {
+    const { ethAddress, message, signature, nonce } = signinDto;
 
     try {
       await this.siweService.verifyMessage(message, signature, nonce);
@@ -111,6 +92,7 @@ export class UsersController {
     @Headers('authorization') authorization: string,
     @Param('ethAddress') ethAddress: string,
   ) {
+    // Refractor to Guard
     if (!authorization) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
