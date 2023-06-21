@@ -7,9 +7,8 @@ import {
   HttpStatus,
   Param,
   Post,
-  Req,
+  Headers,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { ethers } from 'ethers';
 import { QueryFailedError } from 'typeorm';
 
@@ -108,11 +107,14 @@ export class UsersController {
     }
   }
   @Get('/profile/:ethAddress')
-  async profile(@Req() req: Request, @Param('ethAddress') ethAddress: string) {
-    if (!req.headers.authorization) {
+  async profile(
+    @Headers('authorization') authorization: string,
+    @Param('ethAddress') ethAddress: string,
+  ) {
+    if (!authorization) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
-    const token = req.headers.authorization.split(' ')[1];
+    const token = authorization.split(' ')[1];
     const user = await this.authService.validateUser(ethAddress, token);
     if (!user) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
